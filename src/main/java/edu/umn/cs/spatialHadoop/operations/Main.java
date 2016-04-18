@@ -84,7 +84,10 @@ public class Main {
       pgd.addClass("intersects", Intersects.class,
               "Returns the number of shapes intersected to each other. Only supports tiger shape.");
       
-      pgd.addClass("touches", Intersects.class,
+      pgd.addClass("touches", Touches.class,
+              "Returns the number of shapes that touches to each other. Only supports tiger shape.");
+      
+      pgd.addClass("crosses", Crosses.class,
               "Returns the number of shapes that touches to each other. Only supports tiger shape.");
       
       pgd.addClass("union", Union.class,
