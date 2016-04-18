@@ -164,7 +164,7 @@ public class Equals {
   public static class EqualsReduce<S extends Shape> extends MapReduceBase implements
   Reducer<IntWritable, IndexedText, S, S> {
 	 /**Class logger*/
-	 private static final Log sjmrReduceLOG = LogFactory.getLog(EqualsReduce.class);
+	 private static final Log equalsLog = LogFactory.getLog(EqualsReduce.class);
 	  
     /**Number of files in the input*/
     private int inputFileCount;
@@ -186,7 +186,7 @@ public class Equals {
       inactiveMode = OperationsParams.getInactiveModeFlag(job, InactiveMode);
 	  isFilterOnly = OperationsParams.getFilterOnlyModeFlag(job, isFilterOnlyMode);
 	  shapesThresholdPerOnce = OperationsParams.getJoiningThresholdPerOnce(job, JoiningThresholdPerOnce);
-      sjmrReduceLOG.info("configured the reduced task");
+      equalsLog.info("configured the reduced task");
     }
 
     @Override
@@ -215,9 +215,9 @@ public class Equals {
           } while(values.hasNext() && shapeLists[1].size() < shapesThresholdPerOnce);
 
           // Perform spatial join between the two lists
-          sjmrReduceLOG.info("Starting Reduce: (" + shapeLists[0].size() +" X "+ shapeLists[1].size()+ ")...");
+          equalsLog.info("Starting Reduce: (" + shapeLists[0].size() +" X "+ shapeLists[1].size()+ ")...");
           if(isFilterOnly){
-        	sjmrReduceLOG.info("Filter Only Reduce...");
+        	equalsLog.info("Filter Only Reduce...");
               
         	int x = 0;
             SpatialAlgorithms.SpatialJoin_planeSweepFilterOnly(shapeLists[0], shapeLists[1], new ResultCollector2<S, S>() {
@@ -238,7 +238,7 @@ public class Equals {
               }
             }, reporter);  
           }else{
-        	sjmrReduceLOG.info("Standard Reduce Job.");
+        	equalsLog.info("Standard Reduce Job.");
               
             SpatialAlgorithms.SpatialJoin_planeSweep(shapeLists[0], shapeLists[1], new ResultCollector2<S, S>() {
               @Override
@@ -276,7 +276,7 @@ public class Equals {
       Path userOutputPath, OperationsParams params) throws IOException, InterruptedException {
     JobConf job = new JobConf(params, Equals.class);
     
-    LOG.info("SJMR journey starts ....");
+    LOG.info("Equals journey starts ....");
     FileSystem inFs = inFiles[0].getFileSystem(job);
     Path outputPath = userOutputPath;
     if (outputPath == null) {
