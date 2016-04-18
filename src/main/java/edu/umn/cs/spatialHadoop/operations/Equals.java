@@ -211,7 +211,6 @@ public class Equals {
             IndexedText t = values.next();
             S s = (S) shape.clone();
             s.fromText(t.text);
-            
             shapeLists[t.index].add(s);	
           } while(values.hasNext() && shapeLists[1].size() < shapesThresholdPerOnce);
 
@@ -232,14 +231,6 @@ public class Equals {
                 			output.collect(x,y);
                 		return;
                 	}
-                    Rectangle intersectionMBR = x.getMBR().getIntersection(y.getMBR());
-                    // Error: intersectionMBR may be null.
-                    if (intersectionMBR != null) {
-                      if (cellInfo.contains(intersectionMBR.x1, intersectionMBR.y1)) {
-                        // Report to the reduce result collector
-                        output.collect(x, y);
-                      }
-                    }
                   } catch (IOException e) {
                     e.printStackTrace();
                   }	
@@ -261,15 +252,6 @@ public class Equals {
 	                		output.collect(x,y);
 	                    return;
                   	}
-                	  //
-                    Rectangle intersectionMBR = x.getMBR().getIntersection(y.getMBR());
-                    // Error: intersectionMBR may be null.
-                    if (intersectionMBR != null) {
-                      if (cellInfo.contains(intersectionMBR.x1, intersectionMBR.y1)) {
-                        // Report to the reduce result collector
-                        output.collect(x, y);
-                      }
-                    }
                   } catch (IOException e) {
                     e.printStackTrace();
                   }	
@@ -369,7 +351,7 @@ public class Equals {
   }
   
   private static void printUsage() {
-    System.out.println("Performs a EQUALS between two files using the distributed join algorithm");
+    System.out.println("Performs equality operation on two WKT files.");
     System.out.println("Parameters: (* marks the required parameters)");
     System.out.println("<input file 1> - (*) Path to the first input file");
     System.out.println("<input file 2> - (*) Path to the second input file");
