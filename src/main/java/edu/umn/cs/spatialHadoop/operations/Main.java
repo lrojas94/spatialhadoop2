@@ -77,7 +77,10 @@ public class Main {
 
       pgd.addClass("generate", RandomSpatialGenerator.class,
           "Generates a random file containing spatial data");
-
+      
+      pgd.addClass("equals", Equals.class,
+              "Returns the number of shapes equal to each other.");
+      
       pgd.addClass("union", Union.class,
           "Computes the union of input shapes");
 
