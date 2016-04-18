@@ -155,8 +155,8 @@ public class Equals {
         if (shapeMBR == null)
           return;
         
-        //Map by using the area as reference. 
-        output.collect(new IntWritable((int)(shape_mbr.getHeight()*shape_mbr.getWidth())), outputValue);
+        //Map by using the first cell as reference.
+        output.collect(new IntWritable((int)(shape_mbr.getWidth()*shape_mbr.getHeight())), outputValue);
       }
     }
   }
@@ -210,21 +210,17 @@ public class Equals {
           do{
             IndexedText t = values.next();
             S s = (S) shape.clone();
-            sjmrReduceLOG.info(t.text);
-            sjmrReduceLOG.info(s.getClass());
             s.fromText(t.text);
             
             shapeLists[t.index].add(s);	
           } while(values.hasNext() && shapeLists[1].size() < shapesThresholdPerOnce);
 
           // Perform spatial join between the two lists
-          sjmrReduceLOG.info("REDUCIN :V (" + shapeLists[0].size() +" X "+ shapeLists[1].size()+ ")...");
+          sjmrReduceLOG.info("Starting Reduce: (" + shapeLists[0].size() +" X "+ shapeLists[1].size()+ ")...");
           if(isFilterOnly){
+        	sjmrReduceLOG.info("Filter Only Reduce...");
+              
         	int x = 0;
-      		while(x < 100000){
-      			sjmrReduceLOG.info("FILTERIN >.> *-*!!!");
-      			x++;
-      		};
             SpatialAlgorithms.SpatialJoin_planeSweepFilterOnly(shapeLists[0], shapeLists[1], new ResultCollector2<S, S>() {
               @Override
               public void collect(S x, S y) {
@@ -232,15 +228,9 @@ public class Equals {
                   try {
                 	if(x instanceof TigerShape && y instanceof TigerShape){
                 		TigerShape t = (TigerShape)x,t2 = (TigerShape)y;
-                		
-                		
-                		int i = 0;
-                		while(i < 100000){
-                			sjmrReduceLOG.info("TIGERSHAPES *-*!!!");
-                			i++;
-                		};
                 		if(t.geom.equals(t2.geom))
-                			collect(x,y);
+                			output.collect(x,y);
+                		return;
                 	}
                     Rectangle intersectionMBR = x.getMBR().getIntersection(y.getMBR());
                     // Error: intersectionMBR may be null.
@@ -257,53 +247,21 @@ public class Equals {
               }
             }, reporter);  
           }else{
-        		
-        		for(int i = 0; i < shapeLists[0].size();i++){
-        			S x = shapeLists[0].get(i);
-        			for(int j = 0; j < shapeLists[1].size();j++){
-        				S y = shapeLists[1].get(j);
-        				if(x instanceof TigerShape && y instanceof TigerShape){
-                      		TigerShape t = (TigerShape)x,t2 = (TigerShape)y;
-                      		
-                      		
-                      		int z = 0;
-                      		while(z < 100000){
-                      			sjmrReduceLOG.info("TIGERSHAPES *-*!!!");
-                      			z++;
-                      		};
-                      		if(t.geom.equals(t2.geom))
-                      			output.collect(x,y);
-                      	}
-        				else{
-        					sjmrReduceLOG.info("Class-> " + x.getClass().toString());
-        				}
-        			}
-        		}
-        		//
+        	sjmrReduceLOG.info("Standard Reduce Job.");
+              
             SpatialAlgorithms.SpatialJoin_planeSweep(shapeLists[0], shapeLists[1], new ResultCollector2<S, S>() {
               @Override
               public void collect(S x, S y) {
                 if(isSpatialJoinOutputRequired){
                   try {
-                	  if(x instanceof TigerShape && y instanceof TigerShape){
-                  		TigerShape t = (TigerShape)x,t2 = (TigerShape)y;
-                  		
-                  		
-                  		int i = 0;
-                  		while(i < 100000){
-                  			sjmrReduceLOG.info("TIGERSHAPES *-*!!!");
-                  			i++;
-                  		};
-                  		if(t.geom.equals(t2.geom))
-                  			collect(x,y);
-                  		}
-                	  else{
-                		  	int i = 0;
-                    		while(i < 100000){
-                    			sjmrReduceLOG.info("NO TIGER T.T but: " + x.getClass().toString());
-                    			i++;
-                    		};
-                	  }
+                	  //EQUAL CODE:
+                	if(x instanceof TigerShape && y instanceof TigerShape){
+                		TigerShape t = (TigerShape)x,t2 = (TigerShape)y;
+                		if(t !=null && t2 != null && t.geom.equals(t2.geom))
+	                		output.collect(x,y);
+	                    return;
+                  	}
+                	  //
                     Rectangle intersectionMBR = x.getMBR().getIntersection(y.getMBR());
                     // Error: intersectionMBR may be null.
                     if (intersectionMBR != null) {
