@@ -65,10 +65,10 @@ import edu.umn.cs.spatialHadoop.core.OGCJTSShape;
  * @author eldawy
  *
  */
-public class Equals {
+public class Intersects {
   
   /**Class logger*/
-  private static final Log LOG = LogFactory.getLog(Equals.class);
+  private static final Log LOG = LogFactory.getLog(Intersects.class);
   private static final String PartitionGrid = "SJMR.PartitionGrid";
   public static final String PartitioiningFactor = "partition-grid-factor";
   private static final String InactiveMode = "SJMR.InactiveMode";
@@ -108,7 +108,7 @@ public class Equals {
    * @author Ahmed Eldawy
    *
    */
-  public static class EqualsMap extends MapReduceBase
+  public static class IntersectsMap extends MapReduceBase
   implements
   Mapper<Rectangle, Text, IntWritable, IndexedText> {
     private Shape shape;
@@ -155,16 +155,25 @@ public class Equals {
         if (shapeMBR == null)
           return;
         
-        //Map by using the first cell as reference.
-        output.collect(new IntWritable((int)(shape_mbr.getWidth()*shape_mbr.getHeight())), outputValue);
+        //Map in cells (Taken from SJMR)
+        //Note that the problem with this algorithm is that it may
+        //Map an object to more than one cell. This means that this object
+        //Might be processed more than once.
+        java.awt.Rectangle cells = gridInfo.getOverlappingCells(shapeMBR);
+        for (int col = cells.x; col < cells.x + cells.width; col++) {
+          for (int row = cells.y; row < cells.y + cells.height; row++) {
+            cellId.set(row * gridInfo.columns + col + 1);
+            output.collect(cellId, outputValue);
+          }
+        }
       }
     }
   }
   
-  public static class EqualsReduce<S extends Shape> extends MapReduceBase implements
+  public static class IntersectsReduce<S extends Shape> extends MapReduceBase implements
   Reducer<IntWritable, IndexedText, S, S> {
 	 /**Class logger*/
-	 private static final Log equalsLog = LogFactory.getLog(EqualsReduce.class);
+	 private static final Log equalsLog = LogFactory.getLog(IntersectsReduce.class);
 	  
     /**Number of files in the input*/
     private int inputFileCount;
@@ -227,7 +236,7 @@ public class Equals {
                   try {
                 	if(x instanceof TigerShape && y instanceof TigerShape){
                 		TigerShape t = (TigerShape)x,t2 = (TigerShape)y;
-                		if(t !=null && t2 != null && t.geom.equals(t2.geom))
+                		if(t !=null && t2 != null && t.geom.intersects(t2.geom))
                 			output.collect(x,y);
                 		return;
                 	}
@@ -248,7 +257,7 @@ public class Equals {
                 	  //EQUAL CODE:
                 	if(x instanceof TigerShape && y instanceof TigerShape){
                 		TigerShape t = (TigerShape)x,t2 = (TigerShape)y;
-                		if(t !=null && t2 != null && t.geom.equals(t2.geom))
+                		if(t !=null && t2 != null && t.geom.intersects(t2.geom))
 	                		output.collect(x,y);
 	                    return;
                   	}
@@ -272,11 +281,11 @@ public class Equals {
     }
   }
 
-  public static <S extends Shape> long equals(Path[] inFiles,
+  public static <S extends Shape> long intersects(Path[] inFiles,
       Path userOutputPath, OperationsParams params) throws IOException, InterruptedException {
-    JobConf job = new JobConf(params, Equals.class);
+    JobConf job = new JobConf(params, Intersects.class);
     
-    LOG.info("Equals journey starts ....");
+    LOG.info("Intersects journey starts ....");
     FileSystem inFs = inFiles[0].getFileSystem(job);
     Path outputPath = userOutputPath;
     if (outputPath == null) {
@@ -289,8 +298,8 @@ public class Equals {
     FileSystem outFs = outputPath.getFileSystem(job);
     
     ClusterStatus clusterStatus = new JobClient(job).getClusterStatus();
-    job.setJobName("Equals");
-    job.setMapperClass(EqualsMap.class);
+    job.setJobName("Intersects");
+    job.setMapperClass(IntersectsMap.class);
     job.setMapOutputKeyClass(IntWritable.class);
     job.setMapOutputValueClass(IndexedText.class);
     job.setNumMapTasks(5 * Math.max(1, clusterStatus.getMaxMapTasks()));
@@ -299,7 +308,7 @@ public class Equals {
             inFs.getFileStatus(inFiles[1]).getBlockSize()));
 
 
-    job.setReducerClass(EqualsReduce.class);
+    job.setReducerClass(IntersectsReduce.class);
     job.setNumReduceTasks(Math.max(1, clusterStatus.getMaxReduceTasks()));
 
     job.setInputFormat(ShapeLineInputFormat.class);
@@ -351,7 +360,7 @@ public class Equals {
   }
   
   private static void printUsage() {
-    System.out.println("Performs equality operation on two WKT files.");
+    System.out.println("Performs intersection operation on two WKT files.");
     System.out.println("Parameters: (* marks the required parameters)");
     System.out.println("<input file 1> - (*) Path to the first input file");
     System.out.println("<input file 2> - (*) Path to the second input file");
@@ -417,7 +426,7 @@ public class Equals {
     }
 
     long t1 = System.currentTimeMillis();
-    long resultSize = equals(inputPaths, outputPath, params);
+    long resultSize = intersects(inputPaths, outputPath, params);
     long t2 = System.currentTimeMillis();
     System.out.println("Total time: "+(t2-t1)+" millis");
     System.out.println("Result size: "+resultSize);

@@ -79,7 +79,9 @@ public class Main {
           "Generates a random file containing spatial data");
       
       pgd.addClass("equals", Equals.class,
-              "Returns the number of shapes equal to each other.");
+              "Returns the number of shapes equal to each other. Only supports tiger shape.");
+      pgd.addClass("intersects", Intersects.class,
+              "Returns the number of shapes intersected to each other. Only supports tiger shape.");
       
       pgd.addClass("union", Union.class,
           "Computes the union of input shapes");
