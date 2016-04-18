@@ -65,10 +65,10 @@ import edu.umn.cs.spatialHadoop.core.OGCJTSShape;
  * @author eldawy
  *
  */
-public class Intersects {
+public class Crosses {
   
   /**Class logger*/
-  private static final Log LOG = LogFactory.getLog(Intersects.class);
+  private static final Log LOG = LogFactory.getLog(Crosses.class);
   private static final String PartitionGrid = "SJMR.PartitionGrid";
   public static final String PartitioiningFactor = "partition-grid-factor";
   private static final String InactiveMode = "SJMR.InactiveMode";
@@ -108,7 +108,7 @@ public class Intersects {
    * @author Ahmed Eldawy
    *
    */
-  public static class IntersectsMap extends MapReduceBase
+  public static class CrossesMap extends MapReduceBase
   implements
   Mapper<Rectangle, Text, IntWritable, IndexedText> {
     private Shape shape;
@@ -170,10 +170,10 @@ public class Intersects {
     }
   }
   
-  public static class IntersectsReduce<S extends Shape> extends MapReduceBase implements
+  public static class CrossesReduce<S extends Shape> extends MapReduceBase implements
   Reducer<IntWritable, IndexedText, S, S> {
 	 /**Class logger*/
-	 private static final Log equalsLog = LogFactory.getLog(IntersectsReduce.class);
+	 private static final Log equalsLog = LogFactory.getLog(CrossesReduce.class);
 	  
     /**Number of files in the input*/
     private int inputFileCount;
@@ -236,7 +236,7 @@ public class Intersects {
                   try {
                 	if(x instanceof TigerShape && y instanceof TigerShape){
                 		TigerShape t = (TigerShape)x,t2 = (TigerShape)y;
-                		if(t !=null && t2 != null && t.geom.intersects(t2.geom))
+                		if(t !=null && t2 != null && t.geom.crosses(t2.geom))
                 			output.collect(x,y);
                 		return;
                 	}
@@ -254,10 +254,10 @@ public class Intersects {
               public void collect(S x, S y) {
                 if(isSpatialJoinOutputRequired){
                   try {
-                	  //INTERSECTS CODE:
+                	  //TOUCHES CODE:
                 	if(x instanceof TigerShape && y instanceof TigerShape){
                 		TigerShape t = (TigerShape)x,t2 = (TigerShape)y;
-                		if(t !=null && t2 != null && t.geom.intersects(t2.geom))
+                		if(t !=null && t2 != null && t.geom.touches(t2.geom))
 	                		output.collect(x,y);
 	                    return;
                   	}
@@ -283,9 +283,9 @@ public class Intersects {
 
   public static <S extends Shape> long intersects(Path[] inFiles,
       Path userOutputPath, OperationsParams params) throws IOException, InterruptedException {
-    JobConf job = new JobConf(params, Intersects.class);
+    JobConf job = new JobConf(params, Crosses.class);
     
-    LOG.info("Intersects journey starts ....");
+    LOG.info("Crosses journey starts ....");
     FileSystem inFs = inFiles[0].getFileSystem(job);
     Path outputPath = userOutputPath;
     if (outputPath == null) {
@@ -298,8 +298,8 @@ public class Intersects {
     FileSystem outFs = outputPath.getFileSystem(job);
     
     ClusterStatus clusterStatus = new JobClient(job).getClusterStatus();
-    job.setJobName("Intersects");
-    job.setMapperClass(IntersectsMap.class);
+    job.setJobName("Crosses");
+    job.setMapperClass(CrossesMap.class);
     job.setMapOutputKeyClass(IntWritable.class);
     job.setMapOutputValueClass(IndexedText.class);
     job.setNumMapTasks(5 * Math.max(1, clusterStatus.getMaxMapTasks()));
@@ -308,7 +308,7 @@ public class Intersects {
             inFs.getFileStatus(inFiles[1]).getBlockSize()));
 
 
-    job.setReducerClass(IntersectsReduce.class);
+    job.setReducerClass(CrossesReduce.class);
     job.setNumReduceTasks(Math.max(1, clusterStatus.getMaxReduceTasks()));
 
     job.setInputFormat(ShapeLineInputFormat.class);
@@ -360,7 +360,7 @@ public class Intersects {
   }
   
   private static void printUsage() {
-    System.out.println("Performs intersection operation on two WKT files.");
+    System.out.println("Performs Crosses operation on two WKT files.");
     System.out.println("Parameters: (* marks the required parameters)");
     System.out.println("<input file 1> - (*) Path to the first input file");
     System.out.println("<input file 2> - (*) Path to the second input file");

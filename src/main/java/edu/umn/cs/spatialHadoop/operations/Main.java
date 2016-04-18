@@ -80,8 +80,12 @@ public class Main {
       
       pgd.addClass("equals", Equals.class,
               "Returns the number of shapes equal to each other. Only supports tiger shape.");
+      
       pgd.addClass("intersects", Intersects.class,
               "Returns the number of shapes intersected to each other. Only supports tiger shape.");
+      
+      pgd.addClass("touches", Intersects.class,
+              "Returns the number of shapes that touches to each other. Only supports tiger shape.");
       
       pgd.addClass("union", Union.class,
           "Computes the union of input shapes");
