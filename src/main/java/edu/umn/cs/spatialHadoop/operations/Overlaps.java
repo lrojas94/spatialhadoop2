@@ -281,7 +281,7 @@ public class Overlaps {
     }
   }
 
-  public static <S extends Shape> long intersects(Path[] inFiles,
+  public static <S extends Shape> long overlaps(Path[] inFiles,
       Path userOutputPath, OperationsParams params) throws IOException, InterruptedException {
     JobConf job = new JobConf(params, Overlaps.class);
     
@@ -426,7 +426,7 @@ public class Overlaps {
     }
 
     long t1 = System.currentTimeMillis();
-    long resultSize = intersects(inputPaths, outputPath, params);
+    long resultSize = overlaps(inputPaths, outputPath, params);
     long t2 = System.currentTimeMillis();
     System.out.println("Total time: "+(t2-t1)+" millis");
     System.out.println("Result size: "+resultSize);

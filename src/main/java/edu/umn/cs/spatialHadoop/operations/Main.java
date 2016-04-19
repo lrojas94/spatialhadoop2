@@ -90,6 +90,15 @@ public class Main {
       pgd.addClass("crosses", Crosses.class,
               "Returns the number of shapes that touches to each other. Only supports tiger shape.");
       
+      pgd.addClass("overlaps", Overlaps.class,
+              "Returns the number of shapes that touches to each other. Only supports tiger shape.");
+      
+      pgd.addClass("within", Within.class,
+              "Returns the number of shapes that touches to each other. Only supports tiger shape.");
+      
+      pgd.addClass("contains", Contains.class,
+              "Returns the number of shapes that touches to each other. Only supports tiger shape.");
+      
       pgd.addClass("union", Union.class,
           "Computes the union of input shapes");
 

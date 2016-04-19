@@ -65,10 +65,10 @@ import edu.umn.cs.spatialHadoop.core.OGCJTSShape;
  * @author eldawy
  *
  */
-public class Touches {
+public class Contains {
   
   /**Class logger*/
-  private static final Log LOG = LogFactory.getLog(Touches.class);
+  private static final Log LOG = LogFactory.getLog(Contains.class);
   private static final String PartitionGrid = "SJMR.PartitionGrid";
   public static final String PartitioiningFactor = "partition-grid-factor";
   private static final String InactiveMode = "SJMR.InactiveMode";
@@ -108,7 +108,7 @@ public class Touches {
    * @author Ahmed Eldawy
    *
    */
-  public static class TouchesMap extends MapReduceBase
+  public static class ContainsMap extends MapReduceBase
   implements
   Mapper<Rectangle, Text, IntWritable, IndexedText> {
     private Shape shape;
@@ -170,10 +170,10 @@ public class Touches {
     }
   }
   
-  public static class TouchesReduce<S extends Shape> extends MapReduceBase implements
+  public static class ContainsReduce<S extends Shape> extends MapReduceBase implements
   Reducer<IntWritable, IndexedText, S, S> {
 	 /**Class logger*/
-	 private static final Log equalsLog = LogFactory.getLog(TouchesReduce.class);
+	 private static final Log equalsLog = LogFactory.getLog(ContainsReduce.class);
 	  
     /**Number of files in the input*/
     private int inputFileCount;
@@ -236,7 +236,7 @@ public class Touches {
                   try {
                 	if(x instanceof TigerShape && y instanceof TigerShape){
                 		TigerShape t = (TigerShape)x,t2 = (TigerShape)y;
-                		if(t !=null && t2 != null && t.geom.touches(t2.geom))
+                		if(t !=null && t2 != null && t.geom.contains(t2.geom))
                 			output.collect(x,y);
                 		return;
                 	}
@@ -257,7 +257,7 @@ public class Touches {
                 	  //TOUCHES CODE:
                 	if(x instanceof TigerShape && y instanceof TigerShape){
                 		TigerShape t = (TigerShape)x,t2 = (TigerShape)y;
-                		if(t !=null && t2 != null && t.geom.touches(t2.geom))
+                		if(t !=null && t2 != null && t.geom.contains(t2.geom))
 	                		output.collect(x,y);
 	                    return;
                   	}
@@ -281,11 +281,11 @@ public class Touches {
     }
   }
 
-  public static <S extends Shape> long touches(Path[] inFiles,
+  public static <S extends Shape> long contains(Path[] inFiles,
       Path userOutputPath, OperationsParams params) throws IOException, InterruptedException {
-    JobConf job = new JobConf(params, Touches.class);
+    JobConf job = new JobConf(params, Contains.class);
     
-    LOG.info("Touches journey starts ....");
+    LOG.info("Contains journey starts ....");
     FileSystem inFs = inFiles[0].getFileSystem(job);
     Path outputPath = userOutputPath;
     if (outputPath == null) {
@@ -298,8 +298,8 @@ public class Touches {
     FileSystem outFs = outputPath.getFileSystem(job);
     
     ClusterStatus clusterStatus = new JobClient(job).getClusterStatus();
-    job.setJobName("Touches");
-    job.setMapperClass(TouchesMap.class);
+    job.setJobName("Within");
+    job.setMapperClass(ContainsMap.class);
     job.setMapOutputKeyClass(IntWritable.class);
     job.setMapOutputValueClass(IndexedText.class);
     job.setNumMapTasks(5 * Math.max(1, clusterStatus.getMaxMapTasks()));
@@ -308,7 +308,7 @@ public class Touches {
             inFs.getFileStatus(inFiles[1]).getBlockSize()));
 
 
-    job.setReducerClass(TouchesReduce.class);
+    job.setReducerClass(ContainsReduce.class);
     job.setNumReduceTasks(Math.max(1, clusterStatus.getMaxReduceTasks()));
 
     job.setInputFormat(ShapeLineInputFormat.class);
@@ -360,7 +360,7 @@ public class Touches {
   }
   
   private static void printUsage() {
-    System.out.println("Performs Touches operation on two WKT files.");
+    System.out.println("Performs Contains operation on two WKT files.");
     System.out.println("Parameters: (* marks the required parameters)");
     System.out.println("<input file 1> - (*) Path to the first input file");
     System.out.println("<input file 2> - (*) Path to the second input file");
@@ -426,7 +426,7 @@ public class Touches {
     }
 
     long t1 = System.currentTimeMillis();
-    long resultSize = touches(inputPaths, outputPath, params);
+    long resultSize = contains(inputPaths, outputPath, params);
     long t2 = System.currentTimeMillis();
     System.out.println("Total time: "+(t2-t1)+" millis");
     System.out.println("Result size: "+resultSize);

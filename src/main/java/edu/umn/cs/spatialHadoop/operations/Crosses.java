@@ -281,7 +281,7 @@ public class Crosses {
     }
   }
 
-  public static <S extends Shape> long intersects(Path[] inFiles,
+  public static <S extends Shape> long crosses(Path[] inFiles,
       Path userOutputPath, OperationsParams params) throws IOException, InterruptedException {
     JobConf job = new JobConf(params, Crosses.class);
     
@@ -426,7 +426,7 @@ public class Crosses {
     }
 
     long t1 = System.currentTimeMillis();
-    long resultSize = intersects(inputPaths, outputPath, params);
+    long resultSize = crosses(inputPaths, outputPath, params);
     long t2 = System.currentTimeMillis();
     System.out.println("Total time: "+(t2-t1)+" millis");
     System.out.println("Result size: "+resultSize);
