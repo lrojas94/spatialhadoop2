@@ -155,17 +155,8 @@ public class Disjoint {
         if (shapeMBR == null)
           return;
         
-        //Map in cells (Taken from SJMR)
-        //Note that the problem with this algorithm is that it may
-        //Map an object to more than one cell. This means that this object
-        //Might be processed more than once.
-        java.awt.Rectangle cells = gridInfo.getOverlappingCells(shapeMBR);
-        for (int col = cells.x; col < cells.x + cells.width; col++) {
-          for (int row = cells.y; row < cells.y + cells.height; row++) {
-            cellId.set(row * gridInfo.columns + col + 1);
-            output.collect(cellId, outputValue);
-          }
-        }
+        //Map all to the same reduce task. Perform O(N^2) disjoint test.
+        output.collect(new IntWritable(1),outputValue);
       }
     }
   }
@@ -225,51 +216,14 @@ public class Disjoint {
 
           // Perform spatial join between the two lists
           equalsLog.info("Starting Reduce: (" + shapeLists[0].size() +" X "+ shapeLists[1].size()+ ")...");
-          if(isFilterOnly){
-        	equalsLog.info("Filter Only Reduce...");
-              
-        	int x = 0;
-            SpatialAlgorithms.SpatialJoin_planeSweepFilterOnly(shapeLists[0], shapeLists[1], new ResultCollector2<S, S>() {
-              @Override
-              public void collect(S x, S y) {
-                if(isSpatialJoinOutputRequired){
-                  try {
-                	if(x instanceof TigerShape && y instanceof TigerShape){
-                		TigerShape t = (TigerShape)x,t2 = (TigerShape)y;
-                		if(t !=null && t2 != null && t.geom.touches(t2.geom))
-                			output.collect(x,y);
-                		return;
-                	}
-                  } catch (IOException e) {
-                    e.printStackTrace();
-                  }	
-                }
-              }
-            }, reporter);  
-          }else{
-        	equalsLog.info("Standard Reduce Job.");
-              
-            SpatialAlgorithms.SpatialJoin_planeSweep(shapeLists[0], shapeLists[1], new ResultCollector2<S, S>() {
-              @Override
-              public void collect(S x, S y) {
-                if(isSpatialJoinOutputRequired){
-                  try {
-                	  //TOUCHES CODE:
-                	if(x instanceof TigerShape && y instanceof TigerShape){
-                		TigerShape t = (TigerShape)x,t2 = (TigerShape)y;
-                		if(t !=null && t2 != null && t.geom.touches(t2.geom))
-	                		output.collect(x,y);
-	                    return;
-                  	}
-                  } catch (IOException e) {
-                    e.printStackTrace();
-                  }	
-                }
-              }
-            }, reporter);
-
+          for(int i = 0; i < shapeLists[0].size();i++){
+        	  TigerShape x = (TigerShape)shapeLists[0].get(i);
+        	  for(int j = 0; j < shapeLists[1].size();j++){
+        		  TigerShape y = (TigerShape)shapeLists[0].get(j);
+        		  if(x.geom.disjoint(y.geom))
+        			  output.collect((S)x,(S)y);
+        	  }
           }
-          shapeLists[1].clear();
         }
 
         long t2 = System.currentTimeMillis();
@@ -281,7 +235,7 @@ public class Disjoint {
     }
   }
 
-  public static <S extends Shape> long intersects(Path[] inFiles,
+  public static <S extends Shape> long disjoint(Path[] inFiles,
       Path userOutputPath, OperationsParams params) throws IOException, InterruptedException {
     JobConf job = new JobConf(params, Disjoint.class);
     
@@ -298,7 +252,7 @@ public class Disjoint {
     FileSystem outFs = outputPath.getFileSystem(job);
     
     ClusterStatus clusterStatus = new JobClient(job).getClusterStatus();
-    job.setJobName("Intersects");
+    job.setJobName("Disjoint");
     job.setMapperClass(DisjointMap.class);
     job.setMapOutputKeyClass(IntWritable.class);
     job.setMapOutputValueClass(IndexedText.class);
@@ -426,7 +380,7 @@ public class Disjoint {
     }
 
     long t1 = System.currentTimeMillis();
-    long resultSize = intersects(inputPaths, outputPath, params);
+    long resultSize = disjoint(inputPaths, outputPath, params);
     long t2 = System.currentTimeMillis();
     System.out.println("Total time: "+(t2-t1)+" millis");
     System.out.println("Result size: "+resultSize);
